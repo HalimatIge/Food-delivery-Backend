@@ -75,7 +75,10 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/orders", require("./routes/orderRoutes"));
 
 // MongoDB and server start
-const PORT = process.env.PORT || 5005;
+// const PORT = process.env.PORT || 5005;
+const PORT = process.env.PORT || 10000; 
+// app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server running on port ${PORT}`));
+
 
 mongoose
   .connect(process.env.MONGO_URI)
