@@ -4,6 +4,15 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
 
+// ========== COOKIE CONFIGURATION ============
+const getCookieOptions = (maxAge) => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  maxAge: maxAge,
+  domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
+});
+
 // ========== TOKEN GENERATION ============
 const generateAccessToken = (user) =>
   jwt.sign(user, process.env.JWT_SECRET, { expiresIn: "24h" });
@@ -287,19 +296,22 @@ const signInUser = async (req, res) => {
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
-    res.cookie("token", accessToken, {
-      httpOnly: true,
-      secure: true,
-  sameSite: "none",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    });
+  //   res.cookie("token", accessToken, {
+  //     httpOnly: true,
+  //     secure: true,
+  // sameSite: "none",
+  //     maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  //   });
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,
-  sameSite: "none",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+  //   res.cookie("refreshToken", refreshToken, {
+  //     httpOnly: true,
+  //     secure: true,
+  // sameSite: "none",
+  //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  //   });
+res.cookie("token", accessToken, getCookieOptions(24 * 60 * 60 * 1000));
+
+res.cookie("refreshToken", refreshToken, getCookieOptions(7 * 24 * 60 * 60 * 1000));
 
     res.status(200).json({ 
       success: true, 
@@ -533,12 +545,14 @@ const refreshAccessToken = (req, res) => {
       role: user.role,
     });
 
-    res.cookie("token", newAccessToken, {
-      httpOnly: true,
-      secure: true,
-  sameSite: "none",
-      maxAge: 24 * 60 * 60 * 1000,
-    });
+  //   res.cookie("token", newAccessToken, {
+  //     httpOnly: true,
+  //     secure: true,
+  // sameSite: "none",
+  //     maxAge: 24 * 60 * 60 * 1000,
+  //   });
+
+  res.cookie("token", newAccessToken, getCookieOptions(24 * 60 * 60 * 1000));
 
     res.json({ 
       success: true, 
@@ -652,18 +666,28 @@ const updateUserProfile = async (req, res) => {
 };
 
 // ========== LOGOUT ============
-const logout = (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-   secure: true,
-  sameSite: "none"
-  });
+// const logout = (req, res) => {
+//   res.clearCookie("token", {
+//     httpOnly: true,
+//    secure: true,
+//   sameSite: "none"
+//   });
   
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: true,
-  sameSite: "none"
-  });
+//   res.clearCookie("refreshToken", {
+//     httpOnly: true,
+//     secure: true,
+//   sameSite: "none"
+//   });
+  
+//   return res.json({ 
+//     success: true, 
+//     message: "Logged out successfully" 
+//   });
+// };
+
+const logout = (req, res) => {
+  res.clearCookie("token", getCookieOptions(0));
+  res.clearCookie("refreshToken", getCookieOptions(0));
   
   return res.json({ 
     success: true, 
