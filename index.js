@@ -7,35 +7,59 @@ const cookieParser = require("cookie-parser");
 const app = express();
 app.use(cookieParser());
 
-// ✅ CORS Configuration
+// // ✅ CORS Configuration
+// const allowedOrigins = [
+//   "http://localhost:5173",
+//   "https://food-delivery-frontend-beta-six.vercel.app"
+// ];
+
+// // app.use(cors({
+// //   origin: allowedOrigins,
+// //   credentials: true,
+// //   methods: ['GET', 'POST', 'PUT', 'DELETE'],
+// //   allowedHeaders: ['Content-Type', 'Authorization']
+// // }));
+
+// app.use(cors({
+//   origin: function(origin, callback) {
+//     // Allow requests with no origin (mobile apps, Postman, etc.)
+//     if (!origin) return callback(null, true);
+    
+//     if (allowedOrigins.indexOf(origin) !== -1) {
+//       callback(null, true);
+//     } else {
+//       callback(new Error('Not allowed by CORS'));
+//     }
+//   },
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+//   exposedHeaders: ['Set-Cookie']
+// }));
+
 const allowedOrigins = [
   "http://localhost:5173",
   "https://food-delivery-frontend-beta-six.vercel.app"
 ];
 
-// app.use(cors({
-//   origin: allowedOrigins,
-//   credentials: true,
-//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//   allowedHeaders: ['Content-Type', 'Authorization']
-// }));
-
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like Postman, mobile apps)
     if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
+
+    if (allowedOrigins.some(o => origin.startsWith(o))) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      console.error(`❌ CORS blocked: ${origin}`);
+      callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-  exposedHeaders: ['Set-Cookie']
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+  exposedHeaders: ["Set-Cookie"]
 }));
+
 
 // Middleware
 app.use(express.json());
