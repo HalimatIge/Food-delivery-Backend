@@ -24,8 +24,8 @@ const generateRefreshToken = (user) =>
 const createTransporter = () => {
   return nodemailer.createTransport({
     host: process.env.MAIL_HOST || 'smtp.gmail.com',
-    port: process.env.MAIL_PORT || 587,
-    secure: false,
+    port: process.env.MAIL_PORT || 465,
+    secure: true,
     auth: {
       user: process.env.MAIL_USER,
       pass: process.env.MAIL_PASS,
