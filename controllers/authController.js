@@ -23,15 +23,25 @@ const generateRefreshToken = (user) =>
 // ========== EMAIL CONFIGURATION ============
 const createTransporter = () => {
   return nodemailer.createTransport({
-    // host: process.env.MAIL_HOST || 'smtp.gmail.com',
-    host: process.env.MAIL_HOST == 'smtp-relay.brevo.com',
-    port: process.env.MAIL_PORT == 465,
-    secure: true,
-    auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASS,
-    },
-  });
+  host: process.env.MAIL_HOST || "smtp-relay.brevo.com", // string
+  port: Number(process.env.MAIL_PORT) || 587,           // number
+  secure: Number(process.env.MAIL_PORT) === 465,        // true if using SSL port
+  auth: {
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
+  },
+});
+
+  // return nodemailer.createTransport({
+  //   // host: process.env.MAIL_HOST || 'smtp.gmail.com',
+  //   host: process.env.MAIL_HOST == 'smtp-relay.brevo.com',
+  //   port: process.env.MAIL_PORT == 465,
+  //   secure: true,
+  //   auth: {
+  //     user: process.env.MAIL_USER,
+  //     pass: process.env.MAIL_PASS,
+  //   },
+  // });
 };
 
 // ========== SEND OTP ============
