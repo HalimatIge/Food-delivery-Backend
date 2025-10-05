@@ -10,7 +10,7 @@ const getCookieOptions = (maxAge) => ({
   secure: process.env.NODE_ENV === 'production',
   sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   maxAge: maxAge,
-  domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
+  domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
 });
 
 // ========== TOKEN GENERATION ============
@@ -30,6 +30,9 @@ const createTransporter = () => {
     user: process.env.MAIL_USER,
     pass: process.env.MAIL_PASS,
   },
+  tls: {
+      rejectUnauthorized: false 
+    }
 });
 
   // return nodemailer.createTransport({
@@ -45,9 +48,109 @@ const createTransporter = () => {
 };
 
 // ========== SEND OTP ============
+// const sendOtp = async (req, res) => {
+//   try {
+//     const { email } = req.body;
+    
+//     if (!email) {
+//       return res.status(400).json({ 
+//         success: false, 
+//         message: "Email is required" 
+//       });
+//     }
+
+//     // Validate email format
+//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+//     if (!emailRegex.test(email)) {
+//       return res.status(400).json({ 
+//         success: false, 
+//         message: "Invalid email format" 
+//       });
+//     }
+
+//     const isRegistrationFlow = req.path.includes('/send-otp') && !req.path.includes('forgot-password');
+//     const isForgotPasswordFlow = req.path.includes('forgot-password');
+
+//     const userExists = await UserModel.findOne({ email });
+ 
+//     if (isRegistrationFlow && userExists) {
+//       return res.status(400).json({ 
+//         success: false, 
+//         message: "Email already registered. Please login instead." 
+//       });
+//     }
+
+//     if (isForgotPasswordFlow && !userExists) {
+//       return res.status(400).json({ 
+//         success: false, 
+//         message: "Email not registered. Please sign up first." 
+//       });
+//     }
+
+//     const otp = Math.floor(100000 + Math.random() * 900000);
+//     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+//     await Otp.deleteMany({ email });
+//     await Otp.create({ email, otp, expiresAt: otpExpiresAt });
+
+//     console.log(`Generated OTP for ${email}: ${otp}`);
+
+//     const transporter = createTransporter();
+    
+//     const mailOptions = {
+//       from: `"QuickPlate" <${process.env.MAIL_USER}>`,
+//       to: email,
+//       subject: "Your OTP Code - QuickPlate",
+//       html: `
+//         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+//           <h2 style="color: #2563eb; text-align: center;">QuickPlate Verification</h2>
+//           <p>Hello,</p>
+//           <p>Use the following OTP to complete your ${isRegistrationFlow ? 'registration' : 'password reset'}:</p>
+//           <div style="text-align: center; margin: 30px 0;">
+//             <span style="font-size: 32px; font-weight: bold; color: #2563eb; letter-spacing: 5px;">${otp}</span>
+//           </div>
+//           <p>This OTP will expire in <strong>5 minutes</strong>.</p>
+//           <p>If you didn't request this code, please ignore this email.</p>
+//           <hr style="margin: 20px 0;">
+//           <p style="font-size: 12px; color: #666;">QuickPlate Team</p>
+//         </div>
+//       `,
+//     };
+
+//     await transporter.sendMail(mailOptions);
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "OTP sent successfully",
+//     });
+//   } catch (err) {
+//     console.error("Send OTP error:", err.message);
+    
+//     if (err.code === 'EAUTH') {
+//       return res.status(500).json({ 
+//         success: false, 
+//         message: "Email service configuration error" 
+//       });
+//     }
+    
+//     return res.status(500).json({ 
+//       success: false, 
+//       message: "Server error sending OTP" 
+//     });
+//   }
+// };
+
 const sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
+    
+    // Log email configuration (DO THIS FIRST)
+    console.log('Email Config Check:', {
+      host: process.env.MAIL_HOST,
+      port: process.env.MAIL_PORT,
+      user: process.env.MAIL_USER ? 'SET' : 'MISSING',
+      pass: process.env.MAIL_PASS ? 'SET' : 'MISSING'
+    });
     
     if (!email) {
       return res.status(400).json({ 
@@ -56,7 +159,6 @@ const sendOtp = async (req, res) => {
       });
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ 
@@ -85,7 +187,7 @@ const sendOtp = async (req, res) => {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000);
-    const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     await Otp.deleteMany({ email });
     await Otp.create({ email, otp, expiresAt: otpExpiresAt });
@@ -93,6 +195,18 @@ const sendOtp = async (req, res) => {
     console.log(`Generated OTP for ${email}: ${otp}`);
 
     const transporter = createTransporter();
+    
+    // Test the connection
+    try {
+      await transporter.verify();
+      console.log('Email transporter verified successfully');
+    } catch (verifyError) {
+      console.error('Email verification failed:', verifyError);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Email service configuration error" 
+      });
+    }
     
     const mailOptions = {
       from: `"QuickPlate" <${process.env.MAIL_USER}>`,
@@ -115,24 +229,32 @@ const sendOtp = async (req, res) => {
     };
 
     await transporter.sendMail(mailOptions);
+    console.log(`Email sent successfully to ${email}`);
 
     return res.status(200).json({
       success: true,
       message: "OTP sent successfully",
     });
   } catch (err) {
-    console.error("Send OTP error:", err.message);
+    console.error("Send OTP error:", err);
     
     if (err.code === 'EAUTH') {
       return res.status(500).json({ 
         success: false, 
-        message: "Email service configuration error" 
+        message: "Email authentication failed. Check credentials." 
+      });
+    }
+    
+    if (err.code === 'ECONNECTION') {
+      return res.status(500).json({ 
+        success: false, 
+        message: "Could not connect to email server" 
       });
     }
     
     return res.status(500).json({ 
       success: false, 
-      message: "Server error sending OTP" 
+      message: "Server error sending OTP: " + err.message 
     });
   }
 };
