@@ -8,23 +8,28 @@ const app = express();
 
 app.use(cookieParser());
 
+// Allow localhost and all Vercel deployments
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
   "https://food-delivery-frontend-beta-six.vercel.app"
 ];
 
-// CORS must come BEFORE other middleware
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (Postman, mobile apps, curl)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.error(`CORS blocked: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      return callback(null, true);
     }
+    
+    // Allow Vercel preview deployments in development/staging
+    if (process.env.ALLOW_VERCEL_PREVIEWS === 'true' && origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    console.error(`CORS blocked: ${origin}`);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -32,10 +37,35 @@ app.use(cors({
   exposedHeaders: ['set-cookie']
 }));
 
+// app.use(cors({
+//   origin: function(origin, callback) {
+//     // Allow requests with no origin (Postman, mobile apps)
+//     if (!origin) return callback(null, true);
+    
+//     // Check if origin is in allowed list
+//     if (allowedOrigins.includes(origin)) {
+//       return callback(null, true);
+//     }
+    
+//     // Allow ALL Vercel preview deployments (*.vercel.app)
+//     if (origin.endsWith('.vercel.app')) {
+//       return callback(null, true);
+//     }
+    
+//     console.error(`CORS blocked: ${origin}`);
+//     callback(new Error('Not allowed by CORS'));
+//   },
+//   credentials: true,
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization'],
+//   exposedHeaders: ['set-cookie']
+// }));
+
 // Handle preflight requests
+
+
 app.options('*', cors());
 
-// These come AFTER CORS
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
