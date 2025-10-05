@@ -10,7 +10,8 @@ const getCookieOptions = (maxAge) => ({
   secure: process.env.NODE_ENV === 'production',
   sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
   maxAge: maxAge,
-  domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
+  path:'/'
+  // domain: process.env.NODE_ENV === 'production' ? '.onrender.com' : undefined
 });
 
 // ========== TOKEN GENERATION ============
@@ -654,6 +655,48 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
+// const refreshAccessToken = (req, res) => {
+//   const refreshToken = req.cookies.refreshToken;
+  
+//   if (!refreshToken) {
+//     return res.status(401).json({ 
+//       success: false, 
+//       message: "No refresh token" 
+//     });
+//   }
+
+//   jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, user) => {
+//     if (err) {
+//       return res.status(403).json({ 
+//         success: false, 
+//         message: "Invalid refresh token" 
+//       });
+//     }
+
+//     const newAccessToken = generateAccessToken({
+//       id: user.id,
+//       email: user.email,
+//       role: user.role,
+//     });
+
+//   //   res.cookie("token", newAccessToken, {
+//   //     httpOnly: true,
+//   //     secure: true,
+//   // sameSite: "none",
+//   //     maxAge: 24 * 60 * 60 * 1000,
+//   //   });
+
+//   res.cookie("token", newAccessToken, getCookieOptions(24 * 60 * 60 * 1000));
+
+//     res.json({ 
+//       success: true, 
+//       message: "Access token refreshed" 
+//     });
+//   });
+// };
+
+// ========== DASHBOARD ============
+
 const refreshAccessToken = (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   
@@ -664,37 +707,30 @@ const refreshAccessToken = (req, res) => {
     });
   }
 
-  jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Invalid refresh token" 
-      });
-    }
-
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    
     const newAccessToken = generateAccessToken({
-      id: user.id,
-      email: user.email,
-      role: user.role,
+      id: decoded.id,
+      email: decoded.email,
+      role: decoded.role,
     });
 
-  //   res.cookie("token", newAccessToken, {
-  //     httpOnly: true,
-  //     secure: true,
-  // sameSite: "none",
-  //     maxAge: 24 * 60 * 60 * 1000,
-  //   });
+    res.cookie("token", newAccessToken, getCookieOptions(24 * 60 * 60 * 1000));
 
-  res.cookie("token", newAccessToken, getCookieOptions(24 * 60 * 60 * 1000));
-
-    res.json({ 
+    return res.json({ 
       success: true, 
       message: "Access token refreshed" 
     });
-  });
+  } catch (err) {
+    console.error('Token refresh error:', err.message);
+    return res.status(403).json({ 
+      success: false, 
+      message: "Invalid refresh token" 
+    });
+  }
 };
 
-// ========== DASHBOARD ============
 const getDashboard = async (req, res) => {
   try {
     const user = await UserModel.findById(req.user.id).select("-password");
