@@ -443,6 +443,92 @@ const generateRefreshToken = (user) =>
 //   }
 // };
 
+// const sendOtp = async (req, res) => {
+//   try {
+//     const { email } = req.body;
+
+//     if (!email) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Email is required",
+//       });
+//     }
+
+//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+//     if (!emailRegex.test(email)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid email format",
+//       });
+//     }
+
+//     const isRegistrationFlow =
+//       req.path.includes("/send-otp") && !req.path.includes("forgot-password");
+//     const isForgotPasswordFlow = req.path.includes("forgot-password");
+
+//     const userExists = await UserModel.findOne({ email });
+
+//     if (isRegistrationFlow && userExists) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Email already registered. Please login instead.",
+//       });
+//     }
+
+//     if (isForgotPasswordFlow && !userExists) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Email not registered. Please sign up first.",
+//       });
+//     }
+
+//     const otp = Math.floor(100000 + Math.random() * 900000);
+//     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+//     await Otp.deleteMany({ email });
+//     await Otp.create({ email, otp, expiresAt: otpExpiresAt });
+
+//     console.log(`Generated OTP for ${email}: ${otp}`);
+
+//     const msg = {
+//       to: email,
+//       from: process.env.SENDGRID_VERIFIED_SENDER, // Your verified sender email
+//       subject: "Your OTP Code - QuickPlate",
+//       html: `
+//         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+//           <h2 style="color: #2563eb; text-align: center;">QuickPlate Verification</h2>
+//           <p>Hello,</p>
+//           <p>Use the following OTP to complete your ${
+//             isRegistrationFlow ? "registration" : "password reset"
+//           }:</p>
+//           <div style="text-align: center; margin: 30px 0;">
+//             <span style="font-size: 32px; font-weight: bold; color: #2563eb; letter-spacing: 5px;">${otp}</span>
+//           </div>
+//           <p>This OTP will expire in <strong>5 minutes</strong>.</p>
+//           <p>If you didn't request this code, please ignore this email.</p>
+//           <hr style="margin: 20px 0;">
+//           <p style="font-size: 12px; color: #666;">QuickPlate Team</p>
+//         </div>
+//       `,
+//     };
+
+//     await sgMail.send(msg);
+//     console.log(`Email sent successfully to ${email}`);
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "OTP sent successfully",
+//     });
+//   } catch (err) {
+//     console.error("Send OTP error:", err);
+
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to send OTP",
+//     });
+//   }
+// };
+
 const sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
@@ -490,9 +576,16 @@ const sendOtp = async (req, res) => {
 
     console.log(`Generated OTP for ${email}: ${otp}`);
 
+    // Log SendGrid configuration
+    console.log("SendGrid Config Check:", {
+      apiKeySet: !!process.env.SENDGRID_API_KEY,
+      apiKeyPrefix: process.env.SENDGRID_API_KEY?.substring(0, 3),
+      verifiedSender: process.env.SENDGRID_VERIFIED_SENDER,
+    });
+
     const msg = {
       to: email,
-      from: process.env.SENDGRID_VERIFIED_SENDER, // Your verified sender email
+      from: process.env.SENDGRID_VERIFIED_SENDER,
       subject: "Your OTP Code - QuickPlate",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
@@ -522,9 +615,18 @@ const sendOtp = async (req, res) => {
   } catch (err) {
     console.error("Send OTP error:", err);
 
+    // Log detailed error info
+    if (err.response) {
+      console.error("SendGrid Error Details:", {
+        statusCode: err.code,
+        body: err.response.body,
+        headers: err.response.headers,
+      });
+    }
+
     return res.status(500).json({
       success: false,
-      message: "Failed to send OTP",
+      message: "Failed to send OTP. Please try again.",
     });
   }
 };
