@@ -139,7 +139,7 @@ const sendOtp = async (req, res) => {
     }
 
     const mailOptions = {
-      from: `"QuickPlate" <${process.env.MAIL_USER}>`,
+      from: `"QuickPlate" <halimatyetundeige@gmail.com>`,
       to: email,
       subject: "Your OTP Code - QuickPlate",
       html: `
@@ -163,6 +163,8 @@ const sendOtp = async (req, res) => {
     console.log("Attempting to send email...");
     await transporter.sendMail(mailOptions);
     console.log(`✓ Email sent successfully to ${email}`);
+    console.log("Message ID:", info.messageId);
+    console.log("Response:", info.response);
 
     return res.status(200).json({
       success: true,
