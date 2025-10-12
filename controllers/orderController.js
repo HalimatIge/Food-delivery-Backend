@@ -1,6 +1,5 @@
 const Order = require("../models/order.model");
 
-// @desc    Create new order
 const createOrder = async (req, res, next) => {
   try {
     const {
@@ -48,7 +47,7 @@ const createOrder = async (req, res, next) => {
   }
 };
 
-// @desc    Get orders for a specific user
+//    Get orders for a specific user
 const getUserOrders = async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -64,7 +63,7 @@ const getUserOrders = async (req, res, next) => {
   }
 };
 
-// @desc    Get all orders (Admin only)
+//   Get all orders (Admin only)
 const getAllOrders = async (req, res, next) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });

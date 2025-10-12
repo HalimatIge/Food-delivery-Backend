@@ -15,12 +15,12 @@ orderRouter.post("/", createOrder);
 // GET /api/orders/:userId — Get orders by user
 orderRouter.get("/:userId", getUserOrders);
 
-// (optional) GET /api/orders — Get all orders (admin only)
+// (GET /api/orders — Get all orders (admin only)
 orderRouter.get("/", getAllOrders);
 
 orderRouter.patch("/:orderId/status", updateOrderStatus); // Admin - Update order status
 
-orderRouter.put("/:id/cancel", cancelOrder); // New cancel route
+orderRouter.put("/:id/cancel", cancelOrder);
 
 orderRouter.put("/:orderId/status", updateOrderStatus);
 

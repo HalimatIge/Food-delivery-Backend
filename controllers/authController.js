@@ -4,8 +4,6 @@ const jwt = require("jsonwebtoken");
 // const nodemailer = require("nodemailer");
 const bcrypt = require("bcryptjs");
 const brevo = require("@getbrevo/brevo");
-// const sgMail = require("@sendgrid/mail");
-// sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // ========== COOKIE CONFIGURATION ============
 const getCookieOptions = (maxAge) => ({
@@ -120,109 +118,6 @@ const sendOtp = async (req, res) => {
     });
   }
 };
-
-//sendGrid
-// const sendOtp = async (req, res) => {
-//   try {
-//     const { email } = req.body;
-
-//     if (!email) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Email is required",
-//       });
-//     }
-
-//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-//     if (!emailRegex.test(email)) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Invalid email format",
-//       });
-//     }
-
-//     const isRegistrationFlow =
-//       req.path.includes("/send-otp") && !req.path.includes("forgot-password");
-//     const isForgotPasswordFlow = req.path.includes("forgot-password");
-
-//     const userExists = await UserModel.findOne({ email });
-
-//     if (isRegistrationFlow && userExists) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Email already registered. Please login instead.",
-//       });
-//     }
-
-//     if (isForgotPasswordFlow && !userExists) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Email not registered. Please sign up first.",
-//       });
-//     }
-
-//     const otp = Math.floor(100000 + Math.random() * 900000);
-//     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-//     await Otp.deleteMany({ email });
-//     await Otp.create({ email, otp, expiresAt: otpExpiresAt });
-
-//     console.log(`Generated OTP for ${email}: ${otp}`);
-
-//     // Log SendGrid configuration
-//     console.log("SendGrid Config Check:", {
-//       apiKeySet: !!process.env.SENDGRID_API_KEY,
-//       apiKeyPrefix: process.env.SENDGRID_API_KEY?.substring(0, 3),
-//       verifiedSender: process.env.SENDGRID_VERIFIED_SENDER,
-//     });
-
-//     const msg = {
-//       to: email,
-//       from: process.env.SENDGRID_VERIFIED_SENDER,
-//       subject: "Your OTP Code - QuickPlate",
-//       html: `
-//         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-//           <h2 style="color: #2563eb; text-align: center;">QuickPlate Verification</h2>
-//           <p>Hello,</p>
-//           <p>Use the following OTP to complete your ${
-//             isRegistrationFlow ? "registration" : "password reset"
-//           }:</p>
-//           <div style="text-align: center; margin: 30px 0;">
-//             <span style="font-size: 32px; font-weight: bold; color: #2563eb; letter-spacing: 5px;">${otp}</span>
-//           </div>
-//           <p>This OTP will expire in <strong>5 minutes</strong>.</p>
-//           <p>If you didn't request this code, please ignore this email.</p>
-//           <hr style="margin: 20px 0;">
-//           <p style="font-size: 12px; color: #666;">QuickPlate Team</p>
-//         </div>
-//       `,
-//     };
-
-//     await sgMail.send(msg);
-//     console.log(`Email sent successfully to ${email}`);
-
-//     return res.status(200).json({
-//       success: true,
-//       message: "OTP sent successfully",
-//     });
-//   } catch (err) {
-//     console.error("Send OTP error:", err);
-
-//     // Log detailed error info
-//     if (err.response) {
-//       console.error("SendGrid Error Details:", {
-//         statusCode: err.code,
-//         body: err.response.body,
-//         headers: err.response.headers,
-//       });
-//     }
-
-//     return res.status(500).json({
-//       success: false,
-//       message: "Failed to send OTP. Please try again.",
-//     });
-//   }
-// };
 
 const verifyOtp = async (req, res) => {
   try {
@@ -392,19 +287,6 @@ const signInUser = async (req, res) => {
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
-    //   res.cookie("token", accessToken, {
-    //     httpOnly: true,
-    //     secure: true,
-    // sameSite: "none",
-    //     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    //   });
-
-    //   res.cookie("refreshToken", refreshToken, {
-    //     httpOnly: true,
-    //     secure: true,
-    // sameSite: "none",
-    //     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    //   });
     res.cookie("token", accessToken, getCookieOptions(24 * 60 * 60 * 1000));
 
     res.cookie(
@@ -421,6 +303,8 @@ const signInUser = async (req, res) => {
         firstname: user.firstname,
         lastname: user.lastname,
         email: user.email,
+        phone: user.phone || "",
+        address: user.address || "",
         role: user.role,
       },
     });
@@ -499,132 +383,6 @@ const sendForgotPasswordOtp = async (req, res) => {
     });
   }
 };
-
-//SendGrid
-// const sendForgotPasswordOtp = async (req, res) => {
-//   try {
-//     const { email } = req.body;
-
-//     if (!email) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Email is required",
-//       });
-//     }
-
-//     const user = await UserModel.findOne({ email: email.toLowerCase().trim() });
-//     if (!user) {
-//       return res.status(200).json({
-//         success: true,
-//         message: "If the email exists, OTP has been sent",
-//       });
-//     }
-
-//     const otp = Math.floor(100000 + Math.random() * 900000);
-//     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-//     await Otp.deleteMany({ email });
-//     await Otp.create({ email, otp, expiresAt: otpExpiresAt });
-
-//     console.log(`Generated forgot password OTP for ${email}: ${otp}`);
-
-//     const msg = {
-//       to: email,
-//       from: process.env.SENDGRID_VERIFIED_SENDER,
-//       subject: "Reset Your Password - QuickPlate",
-//       html: `
-//         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-//           <h2 style="color: #dc2626; text-align: center;">Password Reset Request</h2>
-//           <p>Hello ${user.firstname},</p>
-//           <p>You requested to reset your password. Use the following OTP:</p>
-//           <div style="text-align: center; margin: 30px 0;">
-//             <span style="font-size: 32px; font-weight: bold; color: #dc2626; letter-spacing: 5px;">${otp}</span>
-//           </div>
-//           <p>This OTP will expire in <strong>5 minutes</strong>.</p>
-//           <p>If you didn't request this, please ignore this email.</p>
-//           <hr style="margin: 20px 0;">
-//           <p style="font-size: 12px; color: #666;">QuickPlate Team</p>
-//         </div>
-//       `,
-//     };
-
-//     await sgMail.send(msg);
-//     console.log(`Forgot password email sent successfully to ${email}`);
-
-//     res.status(200).json({
-//       success: true,
-//       message: "If the email exists, OTP has been sent",
-//     });
-//   } catch (err) {
-//     console.error("Send forgot password OTP error:", err);
-//     res.status(500).json({
-//       success: false,
-//       message: "Failed to send OTP",
-//     });
-//   }
-// };
-
-// const sendForgotPasswordOtp = async (req, res) => {
-//   try {
-//     const { email } = req.body;
-
-//     if (!email) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Email is required",
-//       });
-//     }
-
-//     const user = await UserModel.findOne({ email: email.toLowerCase().trim() });
-//     if (!user) {
-//       return res.status(200).json({
-//         success: true,
-//         message: "If the email exists, OTP has been sent",
-//       });
-//     }
-
-//     const otp = Math.floor(100000 + Math.random() * 900000);
-//     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-//     await Otp.deleteMany({ email });
-//     await Otp.create({ email, otp, expiresAt: otpExpiresAt });
-
-//     const transporter = createTransporter();
-
-//     const mailOptions = {
-//       from: `"QuickPlate" <${process.env.MAIL_USER}>`,
-//       to: email,
-//       subject: "Reset Your Password - QuickPlate",
-//       html: `
-//         <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-//           <h2 style="color: #dc2626; text-align: center;">Password Reset Request</h2>
-//           <p>Hello ${user.firstname},</p>
-//           <p>You requested to reset your password. Use the following OTP:</p>
-//           <div style="text-align: center; margin: 30px 0;">
-//             <span style="font-size: 32px; font-weight: bold; color: #dc2626; letter-spacing: 5px;">${otp}</span>
-//           </div>
-//           <p>This OTP will expire in <strong>5 minutes</strong>.</p>
-//           <p>If you didn't request this, please ignore this email.</p>
-//           <hr style="margin: 20px 0;">
-//           <p style="font-size: 12px; color: #666;">QuickPlate Team</p>
-//         </div>
-//       `,
-//     };
-
-//     await transporter.sendMail(mailOptions);
-
-//     res.status(200).json({
-//       success: true,
-//       message: "If the email exists, OTP has been sent",
-//     });
-//   } catch (err) {
-//     console.error("Send forgot password OTP error:", err.message);
-//     res.status(500).json({
-//       success: false,
-//       message: "Failed to send OTP",
-//     });
-//   }
-// };
 
 // ========== RESET PASSWORD ============
 
@@ -751,46 +509,6 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
-// const refreshAccessToken = (req, res) => {
-//   const refreshToken = req.cookies.refreshToken;
-
-//   if (!refreshToken) {
-//     return res.status(401).json({
-//       success: false,
-//       message: "No refresh token"
-//     });
-//   }
-
-//   jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, user) => {
-//     if (err) {
-//       return res.status(403).json({
-//         success: false,
-//         message: "Invalid refresh token"
-//       });
-//     }
-
-//     const newAccessToken = generateAccessToken({
-//       id: user.id,
-//       email: user.email,
-//       role: user.role,
-//     });
-
-//   //   res.cookie("token", newAccessToken, {
-//   //     httpOnly: true,
-//   //     secure: true,
-//   // sameSite: "none",
-//   //     maxAge: 24 * 60 * 60 * 1000,
-//   //   });
-
-//   res.cookie("token", newAccessToken, getCookieOptions(24 * 60 * 60 * 1000));
-
-//     res.json({
-//       success: true,
-//       message: "Access token refreshed"
-//     });
-//   });
-// };
-
 // ========== DASHBOARD ============
 
 const refreshAccessToken = (req, res) => {
@@ -881,8 +599,7 @@ const updateUserProfile = async (req, res) => {
       user.lastname = nameParts.slice(1).join(" ") || "";
     }
     if (phone) user.phone = phone.trim();
-    if (address) user.address = address.trim(); // ✅ Add this line
-
+    if (address) user.address = address.trim();
     // Password change
     if (currentPassword && newPassword) {
       const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
@@ -915,7 +632,7 @@ const updateUserProfile = async (req, res) => {
       name: `${updatedUser.firstname} ${updatedUser.lastname}`.trim(),
       email: updatedUser.email,
       phone: updatedUser.phone || "",
-      address: updatedUser.address || "", // ✅ Make sure this is included
+      address: updatedUser.address || "",
       role: updatedUser.role,
     };
 
@@ -924,7 +641,7 @@ const updateUserProfile = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",
-      user: updatedUser, // ✅ Use the formatted user object
+      user: updatedUser,
     });
   } catch (err) {
     console.error("❌ Profile update error:", err.message);
@@ -936,24 +653,6 @@ const updateUserProfile = async (req, res) => {
 };
 
 // ========== LOGOUT ============
-// const logout = (req, res) => {
-//   res.clearCookie("token", {
-//     httpOnly: true,
-//    secure: true,
-//   sameSite: "none"
-//   });
-
-//   res.clearCookie("refreshToken", {
-//     httpOnly: true,
-//     secure: true,
-//   sameSite: "none"
-//   });
-
-//   return res.json({
-//     success: true,
-//     message: "Logged out successfully"
-//   });
-// };
 
 const logout = (req, res) => {
   res.clearCookie("token", getCookieOptions(0));
