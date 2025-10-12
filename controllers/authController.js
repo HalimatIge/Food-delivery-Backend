@@ -298,6 +298,8 @@ const signInUser = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Login successful",
+      token: accessToken,
+      refreshToken: refreshToken,
       user: {
         id: user._id,
         firstname: user.firstname,
@@ -454,6 +456,12 @@ const resetPassword = async (req, res) => {
 const getCurrentUser = async (req, res) => {
   try {
     const token = req.cookies.token;
+
+    if (!token && req.headers.authorization) {
+      if (req.headers.authorization.startsWith("Bearer ")) {
+        token = req.headers.authorization.substring(7);
+      }
+    }
 
     if (!token) {
       return res.status(401).json({
